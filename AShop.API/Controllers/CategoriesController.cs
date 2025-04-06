@@ -1,5 +1,9 @@
 ﻿using AShop.API.Data;
+using AShop.API.DTOs.Requests;
+using AShop.API.DTOs.Responses;
 using AShop.API.Models;
+using AShop.API.Services.Interface;
+using Mapster;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,47 +11,47 @@ namespace AShop.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CategoriesController : ControllerBase
+    public class CategoriesController(ICategoryService categoryService) : ControllerBase
     {
-         ApplicationDbContext _context;
+        private readonly ICategoryService categoryService= categoryService;
 
-        public CategoriesController(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+
 
         [HttpGet("")]
         public IActionResult GetAll()
         {
-            var categories = _context.Categories.ToList();
-            return Ok(categories);
+            var categories = categoryService.GetAll();
+            return Ok(categories.Adapt<IEnumerable<CategoryResponse>>());
         }
 
         [HttpGet("{id}")]
         public IActionResult GetById([FromRoute] int id)
         {
-            var category = _context.Categories.Find(id);
-            return category == null ? NotFound() : Ok(category);
+            var category = categoryService.Get(e=>e.Id==id);
+            return category == null ? NotFound() : Ok(category.Adapt<CategoryResponse>());
         }
 
         [HttpPost("")]
-        public IActionResult Create([FromBody] Category category)
+        public IActionResult Create([FromBody] CategoryRequest category)
         {
-            _context.Categories.Add(category);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(GetById),new {category.Id},category);
+            var cat=categoryService.Add(category.Adapt<Category>());
+            return CreatedAtAction(nameof(GetById),new {cat.Id},cat);
+        }
+        [HttpPut("{id}")]
+        public IActionResult Update([FromRoute] int id,[FromBody] CategoryRequest category) {
+            var cat=categoryService.Edit(id,category.Adapt<Category>());
+            if(!cat) return NotFound();
+            return NoContent();
         }
         [HttpDelete("{id}")]
         public IActionResult Delete([FromRoute] int id)
         {
-            var category = _context.Categories.Find(id);
-            if (category == null)
+            var category = categoryService.Remove(id);
+            if (!category)
             {
                 return NotFound();
             }
 
-            _context.Categories.Remove(category);
-            _context.SaveChanges();
             return NoContent();
         }
     }

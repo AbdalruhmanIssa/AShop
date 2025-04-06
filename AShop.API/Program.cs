@@ -1,5 +1,7 @@
 
 using AShop.API.Data;
+using AShop.API.Services.varService;
+using AShop.API.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -19,11 +21,14 @@ namespace AShop.API
             builder.Services.AddOpenApi();
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
    options.UseSqlServer(builder.Configuration.GetConnectionString("defaultConnection")));
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+            builder.Services.AddScoped < IProductService, ProductService>();
+            builder.Services.AddScoped<IBrandService, BrandService>();
+
             var app = builder.Build();
 
-           
             // Configure the HTTP request pipeline.
-            
+
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
