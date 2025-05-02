@@ -1,15 +1,15 @@
 ﻿using AShop.API.Models;
+using AShop.API.Services.IService;
 using System.Linq.Expressions;
 
 namespace AShop.API.Services.Interface
 {
-    public interface ICategoryService
+    public interface ICategoryService:IService<Category>
     {
-        IEnumerable<Category> GetAll();
-        Category Get(Expression <Func<Category,bool>> expression);
-        Category Add (Category category);
-        bool Edit (int id,Category category);
-        bool Remove (int id);
+
+        Task<bool> Edit(int id, Category category, CancellationToken cancellationToken = default);
+        Task<bool> Toggle(int id, CancellationToken cancellationToken = default);
+     
 
     }
 }

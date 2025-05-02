@@ -6,6 +6,7 @@ using AShop.API.Services.varService;
 using Mapster;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace AShop.API.Controllers
 {
@@ -15,36 +16,36 @@ namespace AShop.API.Controllers
     {
         private readonly IBrandService brandService = brandService;
         [HttpGet("")]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var brand = brandService.GetAll();
+            var brand = await brandService.GetAllAsync();
             return Ok(brand.Adapt<IEnumerable<BrandResponse>>());
 
         }
         [HttpGet("{id}")]
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var brand = brandService.Get(e => e.Id == id);
+            var brand =await brandService.Get(e => e.Id == id);
             return brand == null ? NotFound() : Ok(brand.Adapt<BrandResponse>());
         }
         [HttpPost("")]
-        public IActionResult Create([FromBody] BrandRequest brand)
+        public async Task<IActionResult> Create([FromBody] BrandRequest brand,CancellationToken cancellationToken)
         {
 
-            var b = brandService.Add(brand.Adapt<Brand>());
+            var b =await brandService.Add(brand.Adapt<Brand>(),cancellationToken);
             return CreatedAtAction(nameof(GetById), new { b.Id }, b);
         }
         [HttpPut("{id}")]
-        public IActionResult Update([FromRoute] int id, [FromBody] BrandRequest brand)
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] BrandRequest brand)
         {
-            var brand1 = brandService.Edit(id, brand.Adapt<Brand>());
+            var brand1 = await brandService.Edit(id, brand.Adapt<Brand>());
             if (!brand1) return NotFound();
             return NoContent();
         }
         [HttpDelete("{id}")]
-        public IActionResult Delete([FromRoute] int id)
+        public async Task<IActionResult> Delete([FromRoute] int id,CancellationToken cancellationToken)
         {
-            var brand = brandService.Remove(id);
+            var brand = await brandService.Remove(id,cancellationToken);
             if (!brand)
             {
                 return NotFound();
