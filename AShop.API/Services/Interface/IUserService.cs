@@ -6,5 +6,6 @@ namespace AShop.API.Services.Interface
     public interface IUserService:IService<ApplicationUser>
     {
         Task<bool> ChangeRole(string userId, string roleName);
+        Task<bool?> LockUnLock(string userId);
     }
 }

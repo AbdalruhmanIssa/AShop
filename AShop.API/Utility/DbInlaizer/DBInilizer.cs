@@ -25,7 +25,7 @@ namespace AShop.API.Utility.DbInlaizer
             catch(Exception e) { 
             Console.WriteLine(e.Message);
             }
-            if (roleManager.Roles.IsNullOrEmpty())
+            if (!await roleManager.Roles.AnyAsync())
             {
                 await roleManager.CreateAsync(new(StaticData.SuperAdmin));
                 await roleManager.CreateAsync(new(StaticData.Admin));

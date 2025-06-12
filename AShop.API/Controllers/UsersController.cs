@@ -35,6 +35,22 @@ namespace AShop.API.Controllers
             var result = await userService.ChangeRole(userId, newRoleName);
             return Ok(result);
         }
+        [HttpPost("lock-unlock")]
+        public async Task<IActionResult> LockUnLock([FromBody] string userId)
+
+        {
+            var result = await userService.LockUnLock(userId);
+
+            if (result == true)
+            {
+                return Ok();
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+
 
     }
 }

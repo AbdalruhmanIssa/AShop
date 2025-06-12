@@ -34,6 +34,31 @@ namespace AShop.API.Services.varService
 
             return false;
         }
+        public async Task<bool?> LockUnLock(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user is null) return null;
+
+            var isLockedNow = user.LockoutEnabled && user.LockoutEnd > DateTime.Now;
+
+            if (isLockedNow)
+            {
+                // Remove lock
+                user.LockoutEnabled = false;
+                user.LockoutEnd = null;
+            }
+            else
+            {
+                // Apply lock
+                user.LockoutEnabled = true;
+                user.LockoutEnd = DateTime.Now.AddMinutes(1);
+            }
+
+            await _userManager.UpdateAsync(user);
+
+            return !isLockedNow;
+        }
 
 
 

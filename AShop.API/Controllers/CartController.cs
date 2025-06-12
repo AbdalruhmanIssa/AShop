@@ -1,9 +1,12 @@
-﻿using AShop.API.Models;
+﻿using AShop.API.DTOs.Responses;
+using AShop.API.Models;
 using AShop.API.Services.Interface;
+using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace AShop.API.Controllers
@@ -16,12 +19,25 @@ namespace AShop.API.Controllers
         private readonly UserManager<ApplicationUser> userManager = userManager;
         private readonly ICartService cartService = cartService;
         [HttpPost("{ProductId}")]
-        public async Task<IActionResult> AddToCart([FromRoute] int ProductId, [FromQuery] int Count)
+        public async Task<IActionResult> AddToCart([FromRoute] int ProductId, CancellationToken cancellationToken)
         {
-            var user = userManager.GetUserId(User);
-            var cart = new Cart() { ProductId = ProductId, Count = Count, ApplicationUserId = user };
-            await cartService.Add(cart);
-            return Ok(cart);
+            var appUser = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+
+            var result = await cartService.AddToCart(appUser, ProductId, cancellationToken);
+
+            return Ok();
         }
+        [HttpGet("")]
+        public async Task<IActionResult> GetUserCartAsync()
+        {
+            var appUser = User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            var cartItems = await cartService.GetUserCartAsync(appUser);
+
+            var cartResponse = cartItems.Select(e => e.Product).Adapt<IEnumerable<cartResponse>>();
+            var totalPrice = cartItems.Sum(e => e.Product.Price * e.Count);
+
+            return Ok(new { cartResponse, totalPrice });
+        }
+
     }
 }

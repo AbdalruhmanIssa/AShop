@@ -6,8 +6,8 @@ namespace AShop.API.Services.Interface
 {
     public interface IAccountService
     {
-        Task<IdentityResult> RegisterAsync(RegisterRequest registerRequest);
-        Task<SignInResult> LoginAsync(LoginRequest loginRequest);
+       
+        Task<string?> LoginAsync(LoginRequest loginRequest);
         Task<IdentityResult> ChangePasswordAsync(ClaimsPrincipal user, ChangePasswordRequest changePasswordRequest);
     }
 }

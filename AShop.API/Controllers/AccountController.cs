@@ -10,7 +10,11 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace AShop.API.Controllers
@@ -29,47 +33,61 @@ namespace AShop.API.Controllers
         private readonly IEmailSender emailSender = emailSender;
         private readonly RoleManager<IdentityRole> roleManager = roleManager;
 
-
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest registerRequest)
         {
-            var UA = registerRequest.Adapt<ApplicationUser>();
-            var result=await userManager.CreateAsync(UA,registerRequest.Password);
-            if (roleManager.Roles.IsNullOrEmpty()) {
-                await roleManager.CreateAsync(new("SuperAdmin"));
-                await roleManager.CreateAsync(new("Admin"));
-                await roleManager.CreateAsync(new("Customer"));
-                await roleManager.CreateAsync(new("Company"));
-            }
-
+            var applicationUser = registerRequest.Adapt<ApplicationUser>();
+            var result = await userManager.CreateAsync(applicationUser, registerRequest.Password);
             if (result.Succeeded)
             {
-               await emailSender.SendEmailAsync(UA.Email, "flfllf", "<h1></h1>");
-              await  userManager.AddToRoleAsync(UA,StaticData.Customer);
-                await signInManager.SignInAsync(UA,false);
+                await userManager.AddToRoleAsync(applicationUser, StaticData.Customer);
+          
+                var token = await userManager.GenerateEmailConfirmationTokenAsync(applicationUser);
+                var emailConfirmUrl = Url.Action(nameof(ConfirmEmail), "Account", new { token, userId = applicationUser.Id },
+                    protocol: Request.Scheme, // http or https
+                    host: Request.Host.Value
+                );
+
+                await emailSender.SendEmailAsync(applicationUser.Email, "Confirm Email",
+                    $"<h1> Hello {applicationUser.UserName} </h1> <p> t-tshop , new account </p>" +
+                    $"<a href='{emailConfirmUrl}'>click here </a>");
                 return NoContent();
             }
-
             return BadRequest(result.Errors);
         }
+       [HttpGet("ConfirmEmail")]
+        public async Task<IActionResult> ConfirmEmail(string token, string userId)
+        {
+            var user = await userManager.FindByIdAsync(userId);
 
+            if (user is not null)
+            {
+                var result = await userManager.ConfirmEmailAsync(user, token);
 
+                if (result.Succeeded)
+                {
+                    return Ok(new { message = " email confirmed " });
+                }
+                else
+                {
+                    return BadRequest(result.Errors);
+                }
+            }
+
+            return NotFound();
+        }
 
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
-            var x=await accountService.LoginAsync(loginRequest);
-                if (x.Succeeded)
-                {
-                    return NoContent();//no content to return 
-                }
+            var token = await accountService.LoginAsync(loginRequest);
 
-            
-            return BadRequest(new { message = "invalid email or password" }); //if all fails
+            if (token == null)
+                return BadRequest(new { message = "Invalid email or password" });
+
+            return Ok(new { token });
         }
-
-
 
 
         [HttpGet("logout")]
